@@ -5,8 +5,10 @@
 
 {
   # Import the maccel module
+  # Choose one of these:
   imports = [
-    ./maccel-nixos-module.nix
+    ./maccel-nixos-module.nix           # Full module with hashes (production)
+    # ./maccel-nixos-module-no-hashes.nix  # Development module without hashes
     # ... your other imports
   ];
 

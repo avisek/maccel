@@ -13,6 +13,8 @@ A declarative NixOS module for the maccel mouse acceleration driver. This module
 
 ## Installation Methods
 
+> 🚀 **Quick Start**: Want to try maccel immediately without hash complications? Use the [Quick Start Guide (No Hashes)](QUICK-START-NO-HASHES.md) or jump to [Method 2a](#method-2a-development-version-no-hashes-required).
+
 ### Method 1: Using Nix Flakes (Recommended)
 
 Add this to your `flake.nix`:
@@ -39,7 +41,7 @@ Add this to your `flake.nix`:
 }
 ```
 
-### Method 2: Direct Import
+### Method 2: Direct Import (Production)
 
 Download the module file and import it directly:
 
@@ -59,6 +61,29 @@ Then in your `configuration.nix`:
   hardware.maccel.enable = true;
 }
 ```
+
+### Method 2a: Development Version (No Hashes Required)
+
+For quick testing without dealing with SHA256 hashes:
+
+```bash
+# Download the no-hashes development version
+curl -O https://raw.githubusercontent.com/yourusername/maccel-nixos/main/maccel-nixos-module-no-hashes.nix
+```
+
+Then in your `configuration.nix`:
+
+```nix
+{
+  imports = [
+    ./maccel-nixos-module-no-hashes.nix  # Uses builtins.fetchGit - no hashes needed!
+  ];
+
+  hardware.maccel.enable = true;
+}
+```
+
+**Note**: The CLI tools might fail on first build with a hash error, but the kernel module will work. Copy the correct hash from the error message if you need the CLI tools.
 
 ### Method 3: Using Local Clone
 
@@ -197,10 +222,15 @@ The module creates and manages these directories:
 
 ### Getting Source Hashes
 
-You'll need to update the SHA256 hashes in the module. Use these commands:
+**Quick Solution**: Use the [no-hashes development module](#method-2a-development-version-no-hashes-required) to skip this step entirely!
+
+For production deployment, you'll need to update the SHA256 hashes:
 
 ```bash
-# For the source code
+# Automatic hash updating (recommended)
+./update-hashes.sh
+
+# Manual hash fetching
 nix-prefetch-git https://github.com/Gnarus-G/maccel.git --rev v0.5.6
 
 # For the Rust dependencies (after first build attempt)

@@ -12,7 +12,7 @@ let
   fixedPointScale = 4294967296; # 2^32 for 64-bit systems
   
   # Convert float to fixed-point integer (as string for sysfs)
-  toFixedPoint = value: toString (lib.trivial.round (value * fixedPointScale));
+  toFixedPoint = value: toString (builtins.floor (value * fixedPointScale + 0.5));
   
   # Mode enum values (from driver/accel/mode.h)
   modeToInt = mode: {

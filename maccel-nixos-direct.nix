@@ -62,7 +62,7 @@ let
   ) {};
   
   # Optional: Build CLI tools (only if user wants them)
-  maccel-tools = mkIf cfg.buildTools (pkgs.rustPlatform.buildRustPackage rec {
+  maccel-tools = pkgs.rustPlatform.buildRustPackage rec {
     pname = "maccel-tools";
     version = "0.5.6";
     
@@ -80,7 +80,7 @@ let
       license = licenses.gpl2Plus;
       platforms = platforms.linux;
     };
-  });
+  };
 
   # Generate kernel module parameters string for module loading
   kernelModuleParams = 

@@ -62,7 +62,37 @@ Then in your `configuration.nix`:
 }
 ```
 
-### Method 2a: Development Version (No Hashes Required)
+### Method 2a: Direct Parameters (No CLI Required) ⭐
+
+**Recommended**: For the fastest, most reliable setup without CLI dependencies:
+
+```bash
+# Download the direct parameters version
+curl -O https://raw.githubusercontent.com/yourusername/maccel-nixos/main/maccel-nixos-direct.nix
+```
+
+Then in your `configuration.nix`:
+
+```nix
+{
+  imports = [
+    ./maccel-nixos-direct.nix  # No CLI needed - direct kernel parameters!
+  ];
+
+  hardware.maccel = {
+    enable = true;
+    parameters = {
+      sensMultiplier = 1.0;
+      acceleration = 0.3;
+      mode = "linear";
+    };
+  };
+}
+```
+
+**Benefits**: No CLI dependency, faster boot, more reliable, supports ALL 14 parameters.
+
+### Method 2b: Development Version (No Hashes Required)
 
 For quick testing without dealing with SHA256 hashes:
 

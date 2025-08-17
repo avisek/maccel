@@ -174,13 +174,49 @@ systemctl status maccel-info
 
 ## 📋 **Supported Parameters**
 
-| NixOS Option     | Kernel Parameter | Fixed-Point Conversion                           |
-| ---------------- | ---------------- | ------------------------------------------------ |
-| `sensMultiplier` | `SENS_MULT`      | `value * 4294967296`                             |
-| `acceleration`   | `ACCEL`          | `value * 4294967296`                             |
-| `offset`         | `OFFSET`         | `value * 4294967296`                             |
-| `outputCap`      | `OUTPUT_CAP`     | `value * 4294967296`                             |
-| `mode`           | `MODE`           | `linear=0, natural=1, synchronous=2, no_accel=3` |
+### Common Parameters (All Modes)
+
+| NixOS Option     | Kernel Parameter | Fixed-Point Conversion | Default | Description                                            |
+| ---------------- | ---------------- | ---------------------- | ------- | ------------------------------------------------------ |
+| `sensMultiplier` | `SENS_MULT`      | `value * 4294967296`   | 1.0     | Base sensitivity multiplier applied after acceleration |
+| `yxRatio`        | `YX_RATIO`       | `value * 4294967296`   | 1.0     | Y/X axis sensitivity ratio                             |
+| `inputDpi`       | `INPUT_DPI`      | `value * 4294967296`   | 1000.0  | Mouse DPI for normalization                            |
+| `angleRotation`  | `ANGLE_ROTATION` | `value * 4294967296`   | 0.0     | Input rotation in degrees                              |
+| `mode`           | `MODE`           | See below              | linear  | Acceleration curve type                                |
+
+### Linear Mode Parameters
+
+| NixOS Option   | Kernel Parameter | Fixed-Point Conversion | Default | Description                            |
+| -------------- | ---------------- | ---------------------- | ------- | -------------------------------------- |
+| `acceleration` | `ACCEL`          | `value * 4294967296`   | 0.0     | Linear acceleration factor             |
+| `offset`       | `OFFSET`         | `value * 4294967296`   | 0.0     | Input speed threshold for acceleration |
+| `outputCap`    | `OUTPUT_CAP`     | `value * 4294967296`   | 0.0     | Maximum sensitivity multiplier cap     |
+
+### Natural Mode Parameters
+
+| NixOS Option | Kernel Parameter | Fixed-Point Conversion | Default | Description                              |
+| ------------ | ---------------- | ---------------------- | ------- | ---------------------------------------- |
+| `decayRate`  | `DECAY_RATE`     | `value * 4294967296`   | 0.1     | Decay rate of natural curve              |
+| `limit`      | `LIMIT`          | `value * 4294967296`   | 1.5     | Maximum acceleration limit               |
+| `offset`     | `OFFSET`         | `value * 4294967296`   | 0.0     | Input speed threshold (shared parameter) |
+
+### Synchronous Mode Parameters
+
+| NixOS Option | Kernel Parameter | Fixed-Point Conversion | Default | Description                                 |
+| ------------ | ---------------- | ---------------------- | ------- | ------------------------------------------- |
+| `gamma`      | `GAMMA`          | `value * 4294967296`   | 1.0     | Controls transition speed around midpoint   |
+| `smooth`     | `SMOOTH`         | `value * 4294967296`   | 0.5     | Controls suddenness of sensitivity increase |
+| `motivity`   | `MOTIVITY`       | `value * 4294967296`   | 1.5     | Sets max sensitivity (min = 1/motivity)     |
+| `syncSpeed`  | `SYNC_SPEED`     | `value * 4294967296`   | 5.0     | Middle sensitivity between min and max      |
+
+### Mode Values
+
+| Mode String     | Kernel Value | Description                                  |
+| --------------- | ------------ | -------------------------------------------- |
+| `"linear"`      | 0            | Simple linear acceleration                   |
+| `"natural"`     | 1            | Smooth, natural-feeling curve                |
+| `"synchronous"` | 2            | Advanced curve with precise control          |
+| `"no_accel"`    | 3            | No acceleration, just sensitivity adjustment |
 
 ## 🎯 **When to Use Each Approach**
 

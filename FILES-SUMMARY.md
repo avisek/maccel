@@ -34,7 +34,13 @@ Here's everything you need to get maccel working on NixOS, with options for both
 
   - Uses direct parameter approach (fastest, most reliable)
   - No CLI dependency, no systemd services
-  - Same simple configuration syntax
+  - Simple linear mode example
+
+- **`maccel-all-modes-examples.nix`** - Comprehensive examples for all modes ⭐
+
+  - Complete examples for linear, natural, synchronous, and no_accel modes
+  - All parameters explained with use cases
+  - Gaming, productivity, and precision work configurations
 
 - **`maccel-configuration-example.nix`** - CLI-based configuration
   - Shows both module options (production/development)

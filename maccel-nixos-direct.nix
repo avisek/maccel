@@ -86,11 +86,24 @@ let
   kernelModuleParams = 
     let
       params = []
+        # Common parameters
         ++ optional (cfg.parameters.sensMultiplier != null) "SENS_MULT=${toFixedPoint cfg.parameters.sensMultiplier}"
+        ++ optional (cfg.parameters.yxRatio != null) "YX_RATIO=${toFixedPoint cfg.parameters.yxRatio}"
+        ++ optional (cfg.parameters.inputDpi != null) "INPUT_DPI=${toFixedPoint cfg.parameters.inputDpi}"
+        ++ optional (cfg.parameters.angleRotation != null) "ANGLE_ROTATION=${toFixedPoint cfg.parameters.angleRotation}"
+        ++ optional (cfg.parameters.mode != null) "MODE=${modeToInt cfg.parameters.mode}"
+        # Linear mode parameters
         ++ optional (cfg.parameters.acceleration != null) "ACCEL=${toFixedPoint cfg.parameters.acceleration}"
         ++ optional (cfg.parameters.offset != null) "OFFSET=${toFixedPoint cfg.parameters.offset}"
         ++ optional (cfg.parameters.outputCap != null) "OUTPUT_CAP=${toFixedPoint cfg.parameters.outputCap}"
-        ++ optional (cfg.parameters.mode != null) "MODE=${modeToInt cfg.parameters.mode}";
+        # Natural mode parameters
+        ++ optional (cfg.parameters.decayRate != null) "DECAY_RATE=${toFixedPoint cfg.parameters.decayRate}"
+        ++ optional (cfg.parameters.limit != null) "LIMIT=${toFixedPoint cfg.parameters.limit}"
+        # Synchronous mode parameters
+        ++ optional (cfg.parameters.gamma != null) "GAMMA=${toFixedPoint cfg.parameters.gamma}"
+        ++ optional (cfg.parameters.smooth != null) "SMOOTH=${toFixedPoint cfg.parameters.smooth}"
+        ++ optional (cfg.parameters.motivity != null) "MOTIVITY=${toFixedPoint cfg.parameters.motivity}"
+        ++ optional (cfg.parameters.syncSpeed != null) "SYNC_SPEED=${toFixedPoint cfg.parameters.syncSpeed}";
     in
     concatStringsSep " " params;
 
@@ -117,34 +130,92 @@ in {
     };
     
     parameters = {
+      # Common parameters (all modes)
       sensMultiplier = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sensitivity multiplier value (default: 1.0)";
+        description = "Sensitivity multiplier applied after acceleration calculation (default: 1.0)";
       };
       
-      acceleration = mkOption {
+      yxRatio = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Linear acceleration factor (default: 0.0)";
+        description = "Y/X ratio - factor by which Y-axis sensitivity is multiplied (default: 1.0)";
       };
       
-      offset = mkOption {
+      inputDpi = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Input offset value (default: 0.0)";
+        description = "DPI of the mouse, used to normalize effective DPI to 1 in/sec (default: 1000.0)";
       };
       
-      outputCap = mkOption {
+      angleRotation = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Maximum output multiplier (default: 0.0)";
+        description = "Apply rotation in degrees to mouse movement input (default: 0.0)";
       };
       
       mode = mkOption {
         type = types.nullOr (types.enum [ "linear" "natural" "synchronous" "no_accel" ]);
         default = null;
         description = "Acceleration mode (default: linear)";
+      };
+      
+      # Linear mode parameters
+      acceleration = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Linear acceleration factor - controls sensitivity calculation (default: 0.0)";
+      };
+      
+      offset = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Input speed past which to allow acceleration (default: 0.0)";
+      };
+      
+      outputCap = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Maximum sensitivity multiplier cap (default: 0.0)";
+      };
+      
+      # Natural mode parameters
+      decayRate = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Decay rate of the Natural acceleration curve (default: 0.1)";
+      };
+      
+      limit = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Limit of the Natural acceleration curve (default: 1.5)";
+      };
+      
+      # Synchronous mode parameters
+      gamma = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Controls how fast you get from low to fast around the midpoint (default: 1.0)";
+      };
+      
+      smooth = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Controls the suddenness of the sensitivity increase (default: 0.5)";
+      };
+      
+      motivity = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Sets max sensitivity while setting min to 1/MOTIVITY (default: 1.5)";
+      };
+      
+      syncSpeed = mkOption {
+        type = types.nullOr types.float;
+        default = null;
+        description = "Sets the middle sensitivity between min and max sensitivity (default: 5.0)";
       };
     };
   };
@@ -164,16 +235,38 @@ in {
     systemd.tmpfiles.rules = 
       let
         paramRules = []
+          # Common parameters
           ++ optional (cfg.parameters.sensMultiplier != null) 
              "w /sys/module/maccel/parameters/SENS_MULT - - - - ${toFixedPoint cfg.parameters.sensMultiplier}"
+          ++ optional (cfg.parameters.yxRatio != null)
+             "w /sys/module/maccel/parameters/YX_RATIO - - - - ${toFixedPoint cfg.parameters.yxRatio}"
+          ++ optional (cfg.parameters.inputDpi != null)
+             "w /sys/module/maccel/parameters/INPUT_DPI - - - - ${toFixedPoint cfg.parameters.inputDpi}"
+          ++ optional (cfg.parameters.angleRotation != null)
+             "w /sys/module/maccel/parameters/ANGLE_ROTATION - - - - ${toFixedPoint cfg.parameters.angleRotation}"
+          ++ optional (cfg.parameters.mode != null)
+             "w /sys/module/maccel/parameters/MODE - - - - ${modeToInt cfg.parameters.mode}"
+          # Linear mode parameters
           ++ optional (cfg.parameters.acceleration != null)
              "w /sys/module/maccel/parameters/ACCEL - - - - ${toFixedPoint cfg.parameters.acceleration}"
           ++ optional (cfg.parameters.offset != null)
              "w /sys/module/maccel/parameters/OFFSET - - - - ${toFixedPoint cfg.parameters.offset}"
           ++ optional (cfg.parameters.outputCap != null)
              "w /sys/module/maccel/parameters/OUTPUT_CAP - - - - ${toFixedPoint cfg.parameters.outputCap}"
-          ++ optional (cfg.parameters.mode != null)
-             "w /sys/module/maccel/parameters/MODE - - - - ${modeToInt cfg.parameters.mode}";
+          # Natural mode parameters
+          ++ optional (cfg.parameters.decayRate != null)
+             "w /sys/module/maccel/parameters/DECAY_RATE - - - - ${toFixedPoint cfg.parameters.decayRate}"
+          ++ optional (cfg.parameters.limit != null)
+             "w /sys/module/maccel/parameters/LIMIT - - - - ${toFixedPoint cfg.parameters.limit}"
+          # Synchronous mode parameters
+          ++ optional (cfg.parameters.gamma != null)
+             "w /sys/module/maccel/parameters/GAMMA - - - - ${toFixedPoint cfg.parameters.gamma}"
+          ++ optional (cfg.parameters.smooth != null)
+             "w /sys/module/maccel/parameters/SMOOTH - - - - ${toFixedPoint cfg.parameters.smooth}"
+          ++ optional (cfg.parameters.motivity != null)
+             "w /sys/module/maccel/parameters/MOTIVITY - - - - ${toFixedPoint cfg.parameters.motivity}"
+          ++ optional (cfg.parameters.syncSpeed != null)
+             "w /sys/module/maccel/parameters/SYNC_SPEED - - - - ${toFixedPoint cfg.parameters.syncSpeed}";
       in
       # Create basic directories
       [

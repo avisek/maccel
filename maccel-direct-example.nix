@@ -22,11 +22,27 @@
     
     # Set parameters directly - these are converted to fixed-point and applied at boot
     parameters = {
-      sensMultiplier = 1.0;     # Base sensitivity (1.0 = no change)
-      acceleration = 0.3;       # Linear acceleration factor
-      offset = 2.0;            # Start accelerating above this speed
-      outputCap = 2.0;         # Maximum sensitivity multiplier
-      mode = "linear";         # Acceleration curve type
+      # Common parameters (apply to all modes)
+      sensMultiplier = 1.0;     # Base sensitivity multiplier (1.0 = no change)
+      yxRatio = 1.0;           # Y/X sensitivity ratio (1.0 = equal, >1.0 = higher Y sensitivity)
+      inputDpi = 1000.0;       # Mouse DPI for normalization (default: 1000.0)
+      angleRotation = 0.0;     # Rotation angle in degrees (0.0 = no rotation)
+      mode = "linear";         # Acceleration curve: "linear", "natural", "synchronous", "no_accel"
+      
+      # Linear mode parameters (only used when mode = "linear")
+      acceleration = 0.3;      # Linear acceleration factor (0.0 = no acceleration)
+      offset = 2.0;           # Start accelerating above this input speed
+      outputCap = 2.0;        # Maximum sensitivity multiplier cap
+      
+      # Natural mode parameters (only used when mode = "natural")
+      # decayRate = 0.1;        # Decay rate of the natural curve (default: 0.1)
+      # limit = 1.5;            # Limit of the natural curve (default: 1.5)
+      
+      # Synchronous mode parameters (only used when mode = "synchronous")
+      # gamma = 1.0;            # Controls transition speed around midpoint (default: 1.0)
+      # smooth = 0.5;           # Controls suddenness of sensitivity increase (default: 0.5)
+      # motivity = 1.5;         # Sets max sens, min = 1/motivity (default: 1.5)
+      # syncSpeed = 5.0;        # Middle sensitivity between min and max (default: 5.0)
     };
   };
   

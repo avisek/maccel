@@ -277,11 +277,15 @@ in {
     # Create the maccel group
     users.groups.maccel = {};
     
-    # Add udev rules for device permissions (simplified, no parameter reset scripts needed)
+    # Add udev rules for device permissions
     services.udev.extraRules = ''
+      # Handle module loading and sysfs parameter permissions
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", GROUP="maccel", MODE="0664"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
+      
+      # Handle /dev/maccel character device permissions
+      KERNEL=="maccel", GROUP="maccel", MODE="0664"
     '';
     
     # Optional: Install CLI tools if requested

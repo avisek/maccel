@@ -303,6 +303,10 @@ in {
 
     # Add udev rules for device permissions
     services.udev.extraRules = ''
+      # Set permissions for the /dev/maccel character device
+      KERNEL=="maccel", GROUP="maccel", MODE="0664"
+      
+      # Set permissions for module parameters
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", GROUP="maccel", MODE="0664"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"

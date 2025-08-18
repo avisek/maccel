@@ -287,11 +287,30 @@ in {
     # Create the maccel group
     users.groups.maccel = {};
 
-    # Add udev rules for device permissions (simplified, no parameter reset scripts needed)
+    # Create directories needed by CLI tools (when buildTools = true)
+    systemd.tmpfiles.rules =
+      [
+        # Basic directories
+        "d /var/lib/maccel 0755 root maccel"
+        "d /var/lib/maccel/logs 0755 root maccel"
+      ]
+      ++ optionals cfg.buildTools [
+        # CLI tools expect these directories for parameter persistence
+        "d /var/opt/maccel 0775 root maccel"
+        "d /var/opt/maccel/resets 0775 root maccel"
+        "d /var/opt/maccel/logs 0775 root maccel"
+      ];
+
+    # Add udev rules for device permissions
     services.udev.extraRules = ''
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", GROUP="maccel", MODE="0664"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
+    '' + optionalString cfg.buildTools ''
+      
+      # Set permissions for CLI persistence directories (when buildTools = true)
+      ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /var/opt/maccel"
+      ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", RUN+="${pkgs.coreutils}/bin/chmod -R g+w /var/opt/maccel"
     '';
 
     # Optional: Install CLI tools if requested

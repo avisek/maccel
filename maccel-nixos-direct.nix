@@ -81,7 +81,10 @@ with lib; let
       ref = "main";
     };
 
-    cargoHash = "sha256-yegNw5sl9mxreTlumxrG78osWZDQeqI6gMcDJe0A5hQ=";
+    cargoLock = {
+      lockFile = "${src}/Cargo.lock";
+    };
+    
     cargoBuildFlags = ["--bin" "maccel"];
 
     meta = with lib; {

@@ -1,5 +1,5 @@
 {
-  description = "NixOS module for maccel mouse acceleration driver";
+  description = "maccel NixOS Module - Direct parameter approach with zero maintenance";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -15,20 +15,19 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
+        # Export individual packages for advanced users
         packages = {
-          # Provide the kernel module as a package
-          maccel-kernel-module = pkgs.linuxKernel.packages.linux.callPackage (
-            { lib, stdenv, kernel, fetchFromGitHub }:
+          # Kernel module package
+          kernel-module = pkgs.linuxKernel.packages.linux.callPackage (
+            { lib, stdenv, kernel }:
             
             stdenv.mkDerivation rec {
               pname = "maccel";
-              version = "0.5.6";
+              version = "unstable";
               
-              src = fetchFromGitHub {
-                owner = "Gnarus-G";
-                repo = "maccel";
-                rev = "v${version}";
-                sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Update this
+              src = builtins.fetchGit {
+                url = "https://github.com/Gnarus-G/maccel.git";
+                ref = "main";
               };
               
               nativeBuildInputs = kernel.moduleBuildDependencies;
@@ -36,7 +35,7 @@
               makeFlags = [
                 "KVER=${kernel.modDirVersion}"
                 "KDIR=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
-                "DRIVER_CFLAGS=-DFIXEDPT_BITS=${toString stdenv.hostPlatform.parsed.cpu.bits}"
+                "DRIVER_CFLAGS=-DFIXEDPT_BITS=64"
               ];
               
               preBuild = "cd driver";
@@ -55,21 +54,21 @@
             }
           ) {};
           
-          # Provide the CLI/TUI tools as a package
-          maccel-tools = pkgs.rustPlatform.buildRustPackage rec {
+          # CLI/TUI tools package
+          cli-tools = pkgs.rustPlatform.buildRustPackage rec {
             pname = "maccel-tools";
-            version = "0.5.6";
+            version = "unstable";
             
-            src = fetchFromGitHub {
-              owner = "Gnarus-G";
-              repo = "maccel";
-              rev = "v${version}";
-              sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Update this
+            src = builtins.fetchGit {
+              url = "https://github.com/Gnarus-G/maccel.git";
+              ref = "main";
             };
             
-            cargoHash = "sha256-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="; # Update this
+            cargoLock = {
+              lockFile = "${src}/Cargo.lock";
+            };
             
-            cargoBuildFlags = [ "--bin" "maccel" ];
+            cargoBuildFlags = ["--bin" "maccel"];
             
             meta = with lib; {
               description = "CLI and TUI tools for configuring maccel mouse acceleration";
@@ -80,33 +79,36 @@
           };
         };
         
-        # Development shell for working on the module
+        # Development shell
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            nix-prefetch-git
-            nix-prefetch
-            cargo
-            rustc
-            rust-analyzer
             git
+            nix-prefetch-git
           ];
           
           shellHook = ''
-            echo "maccel NixOS module development environment"
-            echo "Use 'nix-prefetch-url --unpack' to get source hashes"
-            echo "Use 'nix-prefetch-git' to get git source hashes"
+            echo "🐭 maccel NixOS Module Development Environment"
+            echo "Use this environment to test and develop the module"
           '';
         };
       }
     ) // {
-      # Provide the NixOS module
-      nixosModules.maccel = import ./maccel-nixos-module.nix;
-      nixosModules.default = self.nixosModules.maccel;
+      # Export the NixOS module - this is what users will import
+      nixosModules = {
+        # Main module export
+        maccel = import ./maccel-nixos-direct.nix;
+        
+        # Default export (same as maccel)
+        default = self.nixosModules.maccel;
+      };
+      
+      # For backwards compatibility and alternative access
+      nixosModule = self.nixosModules.default;
       
       # Overlay for adding packages to nixpkgs
       overlays.default = final: prev: {
-        maccel-kernel-module = self.packages.${final.system}.maccel-kernel-module;
-        maccel-tools = self.packages.${final.system}.maccel-tools;
+        maccel-kernel-module = self.packages.${final.system}.kernel-module;
+        maccel-cli-tools = self.packages.${final.system}.cli-tools;
       };
     };
 }

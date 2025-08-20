@@ -1,5 +1,4 @@
-# NixOS Module for maccel - Direct parameter setting approach
-# This module bypasses the CLI and sets kernel module parameters directly via modprobe
+# NixOS module for maccel mouse acceleration driver
 {
   config,
   lib,
@@ -9,9 +8,11 @@
 with lib; let
   cfg = config.hardware.maccel;
 
-  # Fixed-point arithmetic constants
-  # maccel uses 64-bit fixed-point with 32 fractional bits (scale = 2^32)
-  fixedPointScale = 4294967296;
+  # Fixed-point conversion functions
+  # maccel uses 64-bit fixed-point with 32 fractional bits (FIXEDPT_FBITS = 32)
+  fixedPointScale = 4294967296; # 2^32 for 64-bit systems
+
+  # Convert float to fixed-point integer (as string for sysfs)
   toFixedPoint = value: toString (builtins.floor (value * fixedPointScale + 0.5));
 
   # Mode enum mapping (from driver/accel/mode.h)
@@ -22,7 +23,7 @@ with lib; let
     no_accel = "3";
   };
 
-  # Parameter mapping for cleaner code generation
+  # Parameter mapping (from driver/params.h)
   parameterMap = {
     # Common parameters
     SENS_MULT = cfg.parameters.sensMultiplier;
@@ -118,24 +119,18 @@ with lib; let
   };
 in {
   options.hardware.maccel = {
-    enable = mkEnableOption "maccel mouse acceleration driver";
+    enable = mkEnableOption "Enable maccel mouse acceleration driver (kernel module). Be sure to specify parameters.";
 
     debug = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable debug build and parameter info service";
+      description = "Enable debug build of the kernel module";
     };
 
-    autoload = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Automatically load the kernel module at boot";
-    };
-
-    buildTools = mkOption {
+    enableCli = mkOption {
       type = types.bool;
       default = false;
-      description = "Build and install CLI/TUI tools (optional)";
+      description = "Enable CLI and TUI tools for temporary runtime configuration. Use this for finding the best parameters. Be sure to set the final parameters in the configuration.";
     };
 
     parameters = {
@@ -143,98 +138,98 @@ in {
       sensMultiplier = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sensitivity multiplier (default: 1.0)";
+        description = "Sensitivity multiplier applied after acceleration calculation";
       };
 
       yxRatio = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Y/X sensitivity ratio (default: 1.0)";
+        description = "Y/X ratio - factor by which Y-axis sensitivity is multiplied";
       };
 
       inputDpi = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Mouse DPI for normalization (default: 1000.0)";
+        description = "DPI of the mouse, used to normalize effective DPI";
       };
 
       angleRotation = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Rotation angle in degrees (default: 0.0)";
+        description = "Apply rotation in degrees to mouse movement input";
       };
 
       mode = mkOption {
         type = types.nullOr (types.enum ["linear" "natural" "synchronous" "no_accel"]);
         default = null;
-        description = "Acceleration mode (default: linear)";
+        description = "Acceleration mode";
       };
 
       # Linear mode parameters
       acceleration = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Linear acceleration factor (default: 0.0)";
+        description = "Linear acceleration factor";
       };
 
       offset = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Speed threshold for acceleration (default: 0.0)";
+        description = "Input speed past which to allow acceleration";
       };
 
       outputCap = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Maximum sensitivity multiplier (default: 0.0)";
+        description = "Maximum sensitivity multiplier cap";
       };
 
       # Natural mode parameters
       decayRate = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Natural curve decay rate (default: 0.1)";
+        description = "Decay rate of the Natural acceleration curve";
       };
 
       limit = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Natural curve limit (default: 1.5)";
+        description = "Limit of the Natural acceleration curve";
       };
 
-      # Synchronous mode parameters  
+      # Synchronous mode parameters
       gamma = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Transition speed around midpoint (default: 1.0)";
+        description = "Controls how fast you get from low to fast around the midpoint";
       };
 
       smooth = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sensitivity increase suddenness (default: 0.5)";
+        description = "Controls the suddenness of the sensitivity increase";
       };
 
       motivity = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Max/min sensitivity ratio (default: 1.5)";
+        description = "Sets max sensitivity while setting min to 1/MOTIVITY";
       };
 
       syncSpeed = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Middle sensitivity point (default: 5.0)";
+        description = "Sets the middle sensitivity between min and max sensitivity";
       };
     };
   };
 
   config = mkIf cfg.enable {
-    # Install kernel module
+    # Add kernel module
     boot.extraModulePackages = [maccel-kernel-module];
 
     # Load module with parameters
-    boot.kernelModules = mkIf cfg.autoload ["maccel"];
+    boot.kernelModules = ["maccel"];
     boot.extraModprobeConfig = mkIf (kernelModuleParams != "") ''
       options maccel ${kernelModuleParams}
     '';
@@ -245,47 +240,24 @@ in {
     # Create necessary directories
     systemd.tmpfiles.rules = [
       "d /var/lib/maccel 0755 root maccel"
-      "d /var/lib/maccel/logs 0755 root maccel"
-    ] ++ optionals cfg.buildTools [
+    ] ++ optionals cfg.enableCli [
       "d /var/opt/maccel 0775 root maccel"
       "d /var/opt/maccel/resets 0775 root maccel"
     ];
 
-    # Device permissions via udev
+    # Set device permissions
     services.udev.extraRules = ''
       # Device and parameter permissions
       KERNEL=="maccel", GROUP="maccel", MODE="0664"
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
         RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters", \
         RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
-    '' + optionalString cfg.buildTools ''
+    '' + optionalString cfg.enableCli ''
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
         RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /var/opt/maccel"
     '';
 
     # Install CLI tools if requested
-    environment.systemPackages = mkIf cfg.buildTools [maccel-tools];
-
-    # Debug service to show parameters
-    systemd.services.maccel-info = mkIf cfg.debug {
-      description = "Show maccel parameters";
-      after = ["systemd-modules-load.service"];
-      wantedBy = ["multi-user.target"];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = pkgs.writeScript "maccel-info" ''
-          #!${pkgs.bash}/bin/bash
-          echo "=== maccel parameters ==="
-          if [ -d /sys/module/maccel/parameters ]; then
-            for param in /sys/module/maccel/parameters/*; do
-              echo "$(basename "$param") = $(cat "$param" 2>/dev/null || echo "unreadable")"
-            done
-          else
-            echo "maccel module not loaded"
-          fi
-        '';
-      };
-    };
+    environment.systemPackages = mkIf cfg.enableCli [maccel-tools];
   };
 }

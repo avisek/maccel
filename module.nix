@@ -18,7 +18,7 @@ with lib; let
   # Mode enum mapping (from driver/accel/mode.h)
   modeMap = {
     linear = "0";
-    natural = "1"; 
+    natural = "1";
     synchronous = "2";
     no_accel = "3";
   };
@@ -30,17 +30,20 @@ with lib; let
     YX_RATIO = cfg.parameters.yxRatio;
     INPUT_DPI = cfg.parameters.inputDpi;
     ANGLE_ROTATION = cfg.parameters.angleRotation;
-    MODE = if cfg.parameters.mode != null then modeMap.${cfg.parameters.mode} else null;
-    
+    MODE =
+      if cfg.parameters.mode != null
+      then modeMap.${cfg.parameters.mode}
+      else null;
+
     # Linear mode parameters
     ACCEL = cfg.parameters.acceleration;
     OFFSET = cfg.parameters.offset;
     OUTPUT_CAP = cfg.parameters.outputCap;
-    
+
     # Natural mode parameters
     DECAY_RATE = cfg.parameters.decayRate;
     LIMIT = cfg.parameters.limit;
-    
+
     # Synchronous mode parameters
     GAMMA = cfg.parameters.gamma;
     SMOOTH = cfg.parameters.smooth;
@@ -51,48 +54,52 @@ with lib; let
   # Generate modprobe parameter string
   kernelModuleParams = let
     validParams = filterAttrs (_: v: v != null) parameterMap;
-    formatParam = name: value: 
-      if name == "MODE" 
+    formatParam = name: value:
+      if name == "MODE"
       then "${name}=${value}"
       else "${name}=${toFixedPoint value}";
-  in concatStringsSep " " (mapAttrsToList formatParam validParams);
+  in
+    concatStringsSep " " (mapAttrsToList formatParam validParams);
 
   # Build kernel module
   maccel-kernel-module = config.boot.kernelPackages.callPackage ({
     lib,
-    stdenv, 
+    stdenv,
     kernel,
-  }: stdenv.mkDerivation rec {
-    pname = "maccel";
-    version = "unstable";
+  }:
+    stdenv.mkDerivation rec {
+      pname = "maccel";
+      version = "unstable";
 
-    src = builtins.fetchGit {
-      url = "https://github.com/Gnarus-G/maccel.git";
-      ref = "main";
-    };
+      src = builtins.fetchGit {
+        url = "https://github.com/Gnarus-G/maccel.git";
+        ref = "main";
+      };
 
-    nativeBuildInputs = kernel.moduleBuildDependencies;
+      nativeBuildInputs = kernel.moduleBuildDependencies;
 
-    makeFlags = [
-      "KVER=${kernel.modDirVersion}"
-      "KDIR=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
-      "DRIVER_CFLAGS=-DFIXEDPT_BITS=64"
-    ] ++ optionals cfg.debug ["DRIVER_CFLAGS+=-g -DDEBUG"];
+      makeFlags =
+        [
+          "KVER=${kernel.modDirVersion}"
+          "KDIR=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
+          "DRIVER_CFLAGS=-DFIXEDPT_BITS=64"
+        ]
+        ++ optionals cfg.debug ["DRIVER_CFLAGS+=-g -DDEBUG"];
 
-    preBuild = "cd driver";
+      preBuild = "cd driver";
 
-    installPhase = ''
-      mkdir -p $out/lib/modules/${kernel.modDirVersion}/kernel/drivers/usb
-      cp maccel.ko $out/lib/modules/${kernel.modDirVersion}/kernel/drivers/usb/
-    '';
+      installPhase = ''
+        mkdir -p $out/lib/modules/${kernel.modDirVersion}/kernel/drivers/usb
+        cp maccel.ko $out/lib/modules/${kernel.modDirVersion}/kernel/drivers/usb/
+      '';
 
-    meta = with lib; {
-      description = "Mouse acceleration kernel module for Linux";
-      homepage = "https://www.maccel.org/";
-      license = licenses.gpl2Plus;
-      platforms = platforms.linux;
-    };
-  }) {};
+      meta = with lib; {
+        description = "Mouse acceleration kernel module for Linux";
+        homepage = "https://www.maccel.org/";
+        license = licenses.gpl2Plus;
+        platforms = platforms.linux;
+      };
+    }) {};
 
   # Optional CLI tools
   maccel-tools = pkgs.rustPlatform.buildRustPackage rec {
@@ -107,7 +114,7 @@ with lib; let
     cargoLock = {
       lockFile = "${src}/Cargo.lock";
     };
-    
+
     cargoBuildFlags = ["--bin" "maccel"];
 
     meta = with lib; {
@@ -238,24 +245,28 @@ in {
     users.groups.maccel = {};
 
     # Create necessary directories
-    systemd.tmpfiles.rules = [
-      "d /var/lib/maccel 0755 root maccel"
-    ] ++ optionals cfg.enableCli [
-      "d /var/opt/maccel 0775 root maccel"
-      "d /var/opt/maccel/resets 0775 root maccel"
-    ];
+    systemd.tmpfiles.rules =
+      [
+        "d /var/lib/maccel 0755 root maccel"
+      ]
+      ++ optionals cfg.enableCli [
+        "d /var/opt/maccel 0775 root maccel"
+        "d /var/opt/maccel/resets 0775 root maccel"
+      ];
 
     # Set device permissions
-    services.udev.extraRules = ''
-      # Device and parameter permissions
-      KERNEL=="maccel", GROUP="maccel", MODE="0664"
-      ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
-        RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters", \
-        RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
-    '' + optionalString cfg.enableCli ''
-      ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
-        RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /var/opt/maccel"
-    '';
+    services.udev.extraRules =
+      ''
+        # Device and parameter permissions
+        KERNEL=="maccel", GROUP="maccel", MODE="0664"
+        ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
+          RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters", \
+          RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
+      ''
+      + optionalString cfg.enableCli ''
+        ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
+          RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /var/opt/maccel"
+      '';
 
     # Install CLI tools if requested
     environment.systemPackages = mkIf cfg.enableCli [maccel-tools];

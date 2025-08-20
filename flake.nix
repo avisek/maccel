@@ -1,7 +1,7 @@
 {
   description = "maccel NixOS Module";
 
-  outputs = { ... }: {
+  outputs = {...}: {
     nixosModules.default = import ./module.nix;
   };
 }

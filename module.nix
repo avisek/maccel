@@ -67,7 +67,7 @@ with lib; let
     kernel,
   }:
     stdenv.mkDerivation rec {
-      pname = "maccel";
+      pname = "maccel-dkms";
       version = "unstable";
 
       src = builtins.fetchGit {
@@ -93,7 +93,7 @@ with lib; let
       '';
 
       meta = with lib; {
-        description = "Mouse acceleration kernel module for Linux";
+        description = "Mouse acceleration driver and kernel module for Linux.";
         homepage = "https://www.maccel.org/";
         license = licenses.gpl2Plus;
         platforms = platforms.linux;
@@ -101,8 +101,8 @@ with lib; let
     }) {};
 
   # Optional CLI tools
-  maccel-tools = pkgs.rustPlatform.buildRustPackage rec {
-    pname = "maccel-tools";
+  maccel-cli = pkgs.rustPlatform.buildRustPackage rec {
+    pname = "maccel-cli";
     version = "unstable";
 
     src = builtins.fetchGit {
@@ -243,33 +243,22 @@ in {
     # Create maccel group
     users.groups.maccel = {};
 
-    # Create necessary directories
-    systemd.tmpfiles.rules =
-      [
-        "d /var/lib/maccel 0755 root maccel"
-      ]
-      ++ optionals cfg.enableCli [
-        "d /var/opt/maccel 0775 root maccel"
-        "d /var/opt/maccel/resets 0775 root maccel"
-      ];
+    # Install CLI tools if requested
+    environment.systemPackages = mkIf cfg.enableCli [maccel-cli];
+
+    # Create reset scripts directory
+    systemd.tmpfiles.rules = mkIf cfg.enableCli [
+      "d /var/opt/maccel/resets 0775 root maccel"
+    ];
 
     # Add udev rules
-    services.udev.extraRules =
-      ''
-        # Set sysfs parameter permissions
-        ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
-          RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters", \
-          RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
-        # Set /dev/maccel character device permissions
-        ACTION=="add", KERNEL=="maccel", \
-          GROUP="maccel", MODE="0664"
-      ''
-      + optionalString cfg.enableCli ''
-        ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
-          RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /var/opt/maccel"
-      '';
-
-    # Install CLI tools if requested
-    environment.systemPackages = mkIf cfg.enableCli [maccel-tools];
+    services.udev.extraRules = mkIf cfg.enableCli ''
+      # Set sysfs parameter permissions
+      ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
+        RUN+="${pkgs.coreutils}/bin/chown :maccel /sys/module/maccel/parameters/*"
+      # Set /dev/maccel character device permissions
+      ACTION=="add", KERNEL=="maccel", \
+        GROUP="maccel", MODE="0640"
+    '';
   };
 }

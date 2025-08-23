@@ -117,7 +117,7 @@ with lib; let
     cargoBuildFlags = ["--bin" "maccel"];
 
     meta = with lib; {
-      description = "CLI and TUI tools for configuring maccel";
+      description = "CLI and TUI tools for configuring maccel.";
       homepage = "https://www.maccel.org/";
       license = licenses.gpl2Plus;
       platforms = platforms.linux;
@@ -219,7 +219,7 @@ in {
       motivity = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sets max sensitivity while setting min to 1/MOTIVITY";
+        description = "Sets max sensitivity while setting min to 1/motivity";
       };
 
       syncSpeed = mkOption {

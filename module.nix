@@ -8,9 +8,8 @@
 with lib; let
   cfg = config.hardware.maccel;
 
-  # Fixed-point conversion functions
-  # maccel uses 64-bit fixed-point with 32 fractional bits (FIXEDPT_FBITS = 32)
-  fixedPointScale = 4294967296; # 2^32 for 64-bit systems
+  # Fixed-point conversion (64-bit, 32 fractional bits)
+  fixedPointScale = 4294967296; # 2^32
 
   # Convert float to fixed-point integer (as string for sysfs)
   toFixedPoint = value: toString (builtins.floor (value * fixedPointScale + 0.5));
@@ -137,7 +136,7 @@ in {
     enableCli = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable CLI and TUI tools for temporary runtime configuration. Use this for finding the best parameters. Be sure to set the final parameters in the configuration.";
+      description = "Enable CLI and TUI tools for configuring maccel temporarily. Use this to find the best parameters. Be sure to set the final parameters in the configuration.";
     };
 
     parameters = {
@@ -254,14 +253,16 @@ in {
         "d /var/opt/maccel/resets 0775 root maccel"
       ];
 
-    # Set device permissions
+    # Add udev rules
     services.udev.extraRules =
       ''
-        # Device and parameter permissions
-        KERNEL=="maccel", GROUP="maccel", MODE="0664"
+        # Set sysfs parameter permissions
         ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
           RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters", \
           RUN+="${pkgs.coreutils}/bin/chmod -R g+w /sys/module/maccel/parameters"
+        # Set /dev/maccel character device permissions
+        ACTION=="add", KERNEL=="maccel", \
+          GROUP="maccel", MODE="0664"
       ''
       + optionalString cfg.enableCli ''
         ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \

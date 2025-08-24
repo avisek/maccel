@@ -125,18 +125,18 @@ with lib; let
   };
 in {
   options.hardware.maccel = {
-    enable = mkEnableOption "Enable maccel mouse acceleration driver (kernel module). Be sure to specify parameters.";
+    enable = mkEnableOption "Enable maccel mouse acceleration driver (kernel module). Parameters must be configured via `hardware.maccel.parameters`.";
 
     debug = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable debug build of the kernel module";
+      description = "Enable debug build of the kernel module.";
     };
 
     enableCli = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable CLI and TUI tools for configuring maccel temporarily. Use this to find the best parameters. Be sure to set the final parameters in the configuration.";
+      description = "Install CLI and TUI tools for real-time parameter tuning. Changes made via CLI/TUI are temporary and do not persist across reboots. Use this to discover optimal parameter values, then apply them permanently via `hardware.maccel.parameters`.";
     };
 
     parameters = {
@@ -144,88 +144,88 @@ in {
       sensMultiplier = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sensitivity multiplier applied after acceleration calculation";
+        description = "Sensitivity multiplier applied after acceleration calculation.";
       };
 
       yxRatio = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Y/X ratio - factor by which Y-axis sensitivity is multiplied";
+        description = "Y/X ratio - factor by which Y-axis sensitivity is multiplied.";
       };
 
       inputDpi = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "DPI of the mouse, used to normalize effective DPI";
+        description = "DPI of the mouse, used to normalize effective DPI.";
       };
 
       angleRotation = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Apply rotation in degrees to mouse movement input";
+        description = "Apply rotation in degrees to mouse movement input.";
       };
 
       mode = mkOption {
         type = types.nullOr (types.enum ["linear" "natural" "synchronous" "no_accel"]);
         default = null;
-        description = "Acceleration mode";
+        description = "Acceleration mode.";
       };
 
       # Linear mode parameters
       acceleration = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Linear acceleration factor";
+        description = "Linear acceleration factor.";
       };
 
       offset = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Input speed past which to allow acceleration";
+        description = "Input speed past which to allow acceleration.";
       };
 
       outputCap = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Maximum sensitivity multiplier cap";
+        description = "Maximum sensitivity multiplier cap.";
       };
 
       # Natural mode parameters
       decayRate = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Decay rate of the Natural acceleration curve";
+        description = "Decay rate of the Natural acceleration curve.";
       };
 
       limit = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Limit of the Natural acceleration curve";
+        description = "Limit of the Natural acceleration curve.";
       };
 
       # Synchronous mode parameters
       gamma = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Controls how fast you get from low to fast around the midpoint";
+        description = "Controls how fast you get from low to fast around the midpoint.";
       };
 
       smooth = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Controls the suddenness of the sensitivity increase";
+        description = "Controls the suddenness of the sensitivity increase.";
       };
 
       motivity = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sets max sensitivity while setting min to 1/motivity";
+        description = "Sets max sensitivity while setting min to 1/motivity.";
       };
 
       syncSpeed = mkOption {
         type = types.nullOr types.float;
         default = null;
-        description = "Sets the middle sensitivity between min and max sensitivity";
+        description = "Sets the middle sensitivity between min and max sensitivity.";
       };
     };
   };

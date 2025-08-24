@@ -255,7 +255,7 @@ in {
     services.udev.extraRules = mkIf cfg.enableCli ''
       # Set sysfs parameter permissions
       ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/maccel", \
-        RUN+="${pkgs.coreutils}/bin/chown :maccel /sys/module/maccel/parameters/*"
+        RUN+="${pkgs.coreutils}/bin/chgrp -R maccel /sys/module/maccel/parameters"
       # Set /dev/maccel character device permissions
       ACTION=="add", KERNEL=="maccel", \
         GROUP="maccel", MODE="0640"

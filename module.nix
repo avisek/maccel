@@ -29,10 +29,7 @@ with lib; let
     YX_RATIO = cfg.parameters.yxRatio;
     INPUT_DPI = cfg.parameters.inputDpi;
     ANGLE_ROTATION = cfg.parameters.angleRotation;
-    MODE =
-      if cfg.parameters.mode != null
-      then modeMap.${cfg.parameters.mode}
-      else null;
+    MODE = cfg.parameters.mode;
 
     # Linear mode parameters
     ACCEL = cfg.parameters.acceleration;
@@ -55,7 +52,7 @@ with lib; let
     validParams = filterAttrs (_: v: v != null) parameterMap;
     formatParam = name: value:
       if name == "MODE"
-      then "${name}=${value}"
+      then "${name}=${modeMap.${value}}"
       else "${name}=${toFixedPoint value}";
   in
     concatStringsSep " " (mapAttrsToList formatParam validParams);

@@ -8,6 +8,14 @@
 with lib; let
   cfg = config.hardware.maccel;
 
+  # Extract version from PKGBUILD
+  pkgbuildContent = builtins.readFile ./PKGBUILD;
+  kernelModuleVersion = builtins.head (builtins.match ".*pkgver=([^[:space:]]+).*" pkgbuildContent);
+
+  # Extract version from CLI Cargo.toml
+  cliCargoContent = builtins.readFile ./cli/Cargo.toml;
+  cliVersion = builtins.head (builtins.match ".*version = \"([^\"]+)\".*" cliCargoContent);
+
   # Fixed-point conversion (64-bit, 32 fractional bits)
   fixedPointScale = 4294967296; # 2^32
 
@@ -65,12 +73,9 @@ with lib; let
   }:
     stdenv.mkDerivation rec {
       pname = "maccel-dkms";
-      version = "unstable";
+      version = kernelModuleVersion;
 
-      src = builtins.fetchGit {
-        url = "https://github.com/Gnarus-G/maccel.git";
-        ref = "main";
-      };
+      src = ./.;
 
       nativeBuildInputs = kernel.moduleBuildDependencies;
 
@@ -100,12 +105,9 @@ with lib; let
   # Optional CLI tools
   maccel-cli = pkgs.rustPlatform.buildRustPackage rec {
     pname = "maccel-cli";
-    version = "unstable";
+    version = cliVersion;
 
-    src = builtins.fetchGit {
-      url = "https://github.com/Gnarus-G/maccel.git";
-      ref = "main";
-    };
+    src = ./.;
 
     cargoLock = {
       lockFile = "${src}/Cargo.lock";

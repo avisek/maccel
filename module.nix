@@ -16,18 +16,16 @@ with lib; let
   cliCargoContent = builtins.readFile ./cli/Cargo.toml;
   cliVersion = builtins.head (builtins.match ".*version = \"([^\"]+)\".*" cliCargoContent);
 
-  # Fixed-point conversion (64-bit, 32 fractional bits)
+  # Convert float to fixed-point integer (64-bit, 32 fractional bits)
   fixedPointScale = 4294967296; # 2^32
-
-  # Convert float to fixed-point integer (as string for sysfs)
-  toFixedPoint = value: toString (builtins.floor (value * fixedPointScale + 0.5));
+  toFixedPoint = value: builtins.floor (value * fixedPointScale + 0.5);
 
   # Mode enum mapping (from driver/accel/mode.h)
   modeMap = {
-    linear = "0";
-    natural = "1";
-    synchronous = "2";
-    no_accel = "3";
+    linear = 0;
+    natural = 1;
+    synchronous = 2;
+    no_accel = 3;
   };
 
   # Parameter mapping (from driver/params.h)
@@ -60,8 +58,8 @@ with lib; let
     validParams = filterAttrs (_: v: v != null) parameterMap;
     formatParam = name: value:
       if name == "MODE"
-      then "${name}=${modeMap.${value}}"
-      else "${name}=${toFixedPoint value}";
+      then "${name}=${toString (modeMap.${value})}"
+      else "${name}=${toString (toFixedPoint value)}";
   in
     concatStringsSep " " (mapAttrsToList formatParam validParams);
 
@@ -109,9 +107,7 @@ with lib; let
 
     src = ./.;
 
-    cargoLock = {
-      lockFile = "${src}/Cargo.lock";
-    };
+    cargoLock.lockFile = "${src}/Cargo.lock";
 
     cargoBuildFlags = ["--bin" "maccel"];
 

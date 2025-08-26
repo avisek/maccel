@@ -71,7 +71,6 @@ with lib; let
   }:
     stdenv.mkDerivation rec {
       pname = "maccel-dkms";
-      version = kernelModuleVersion;
 
       src = ./.;
 
@@ -103,7 +102,6 @@ with lib; let
   # Optional CLI tools
   maccel-cli = pkgs.rustPlatform.buildRustPackage rec {
     pname = "maccel-cli";
-    version = cliVersion;
 
     src = ./.;
 

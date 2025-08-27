@@ -131,7 +131,7 @@ in {
     enableCli = mkOption {
       type = types.bool;
       default = false;
-      description = "Install CLI and TUI tools for real-time parameter tuning. Changes made via CLI/TUI are temporary and do not persist across reboots. Use this to discover optimal parameter values, then apply them permanently via `hardware.maccel.parameters`.";
+      description = "Install CLI and TUI tools for real-time parameter tuning. You may add your user to the `maccel` group using `users.groups.maccel.members = [\"your_username\"];` to run maccel CLI/TUI without sudo. Note: Changes made via CLI/TUI are temporary and do not persist across reboots. Use this to discover optimal parameter values, then apply them permanently via `hardware.maccel.parameters`.";
     };
 
     parameters = {

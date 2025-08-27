@@ -13,7 +13,7 @@ with lib; let
   kernelModuleVersion = builtins.head (builtins.match ".*pkgver=([^[:space:]]+).*" pkgbuildContent);
 
   # Extract version from cli/Cargo.toml
-  cliCargoToml = builtins.fromTOMLFile ./cli/Cargo.toml;
+  cliCargoToml = builtins.fromTOML (builtins.readFile ./cli/Cargo.toml);
   cliVersion = cliCargoToml.package.version;
 
   # Convert float to fixed-point integer (64-bit, 32 fractional bits)

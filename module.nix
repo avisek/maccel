@@ -12,9 +12,9 @@ with lib; let
   pkgbuildContent = builtins.readFile ./PKGBUILD;
   kernelModuleVersion = builtins.head (builtins.match ".*pkgver=([^[:space:]]+).*" pkgbuildContent);
 
-  # Extract version from CLI Cargo.toml
-  cliCargoContent = builtins.readFile ./cli/Cargo.toml;
-  cliVersion = builtins.head (builtins.match ".*version = \"([^\"]+)\".*" cliCargoContent);
+  # Extract version from cli/Cargo.toml
+  cliCargoToml = builtins.fromTOMLFile ./cli/Cargo.toml;
+  cliVersion = cliCargoToml.package.version;
 
   # Convert float to fixed-point integer (64-bit, 32 fractional bits)
   fixedPointScale = 4294967296; # 2^32

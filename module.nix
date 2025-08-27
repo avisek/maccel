@@ -149,9 +149,11 @@ in {
       };
 
       inputDpi = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x > 0.0)
+            // {description = "positive float";});
         default = null;
-        description = "DPI of the mouse, used to normalize effective DPI.";
+        description = "DPI of the mouse, used to normalize effective DPI. Must be positive.";
       };
 
       angleRotation = mkOption {
@@ -174,9 +176,11 @@ in {
       };
 
       offset = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x >= 0.0)
+            // {description = "non-negative float";});
         default = null;
-        description = "Input speed past which to allow acceleration.";
+        description = "Input speed past which to allow acceleration. Cannot be negative.";
       };
 
       outputCap = mkOption {
@@ -187,40 +191,52 @@ in {
 
       # Natural mode parameters
       decayRate = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x > 0.0)
+            // {description = "positive float";});
         default = null;
-        description = "Decay rate of the Natural acceleration curve.";
+        description = "Decay rate of the Natural acceleration curve. Must be positive.";
       };
 
       limit = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x >= 1.0)
+            // {description = "float >= 1.0";});
         default = null;
-        description = "Limit of the Natural acceleration curve.";
+        description = "Limit of the Natural acceleration curve. Cannot be less than 1.";
       };
 
       # Synchronous mode parameters
       gamma = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x > 0.0)
+            // {description = "positive float";});
         default = null;
-        description = "Controls how fast you get from low to fast around the midpoint.";
+        description = "Controls how fast you get from low to fast around the midpoint. Must be positive.";
       };
 
       smooth = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x >= 0.0 && x <= 1.0)
+            // {description = "float between 0.0 and 1.0";});
         default = null;
-        description = "Controls the suddenness of the sensitivity increase.";
+        description = "Controls the suddenness of the sensitivity increase. Must be between 0 and 1.";
       };
 
       motivity = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x > 1.0)
+            // {description = "float > 1.0";});
         default = null;
-        description = "Sets max sensitivity while setting min to 1/motivity.";
+        description = "Sets max sensitivity while setting min to 1/motivity. Must be greater than 1.";
       };
 
       syncSpeed = mkOption {
-        type = types.nullOr types.float;
+        type =
+          types.nullOr (types.addCheck types.float (x: x > 0.0)
+            // {description = "positive float";});
         default = null;
-        description = "Sets the middle sensitivity between min and max sensitivity.";
+        description = "Sets the middle sensitivity between min and max sensitivity. Must be positive.";
       };
     };
   };
